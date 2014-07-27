@@ -13,8 +13,12 @@ function onBeforeNext(e){
 		l0g: function(msg){
 			if(_.isNumber(msg) || _.isString(msg) || _.isBoolean(msg)){
 				console.log(msg);
-			} else if(_.isArray(msg) || _.isObject(msg)){
-				_.each(_.toArray(msg), function(element,index,list){
+			} else if(_.isObject(msg)){
+				_.each(msg, function(value,key,list){
+					console.log("["+key+"] = "+value);
+				});
+			} else if(_.isArray(msg)){
+				_.each(msg, function(element,index,list){
 					console.log("["+index+"] = "+element);
 				});
 			}
@@ -44,11 +48,17 @@ function onBeforeNext(e){
 		getProgress: function(){
 			if(this.is("#rootwizard")) return this.data('progress');
 		},
-		setProgress: function(percent){
+		setProgress: function(progress){
 			if(this.is("#rootwizard")){
-				this.data('progress', percent);
-				this.find('.progress-bar').css({width:percent+'%'});
+				var finished = (this.finishedSteps()<1)?1:this.finishedSteps();
+				if(progress<(finished*20)){
+					this.data('progress', progress);
+					this.find('.progress-bar').css({width:progress+'%'});
+				}
 			}
+		},
+		activeTab: function(){
+			if(this.is("#rootwizard")) return $("#wizardTabs li.active a").attr("href");
 		},
 		totalSteps: function(){
 			if(this.is("#rootwizard")) return $("#wizardTabs li").length;
@@ -69,23 +79,32 @@ function onBeforeNext(e){
 			if(this.is("#rootwizard")) return (this.data('step')<this.totalSteps())? this.data('step')+1 : false;
 		},
 		addFinished: function(step){
-			if(this.is("#rootwizard")) this.data('finished').push(step);
-		},
-		removeFinished: function(){
 			if(this.is("#rootwizard")){
-				var finished = this.finishedSteps(true);
-				if($.inArray(step,finished)){
-					var newList = _.without(finished,step);
-					this.removeData('finished');
-					this.data('finished', newList)
+				this.data('finished').push(step);
+				this.data('step',step+1);
+			}
+		},
+		removeFinished: function(step){
+			if(this.is("#rootwizard")){
+				if(_.isUndefined(step)){
+					this.data('finished').pop();
+				} else if(!isNaN(step)){
+					var finished = this.finishedSteps(true);
+					if($.inArray(step,finished)){
+						var newList = _.without(finished,step);
+						this.removeData('finished');
+						this.data('finished', newList)
+					}
+				} else {
+					_.l0g("illegal parameter: must have 0 params OR the only param must be a number");
 				}
 			}
 		},
 		enableNextTab: function(){
-			if(this.is("#rootwizard")) $("#wizardTabs li").eq(this.nextStep()).disable(true);
+			if(this.is("#rootwizard")) $("#wizardTabs li a").eq(this.nextStep()).disable(false);
 		},
 		disableNextTab: function(){
-			if(this.is("#rootwizard")) $("#wizardTabs li").eq(this.nextStep()).disable(true);
+			if(this.is("#rootwizard")) $("#wizardTabs li a").eq(this.nextStep()).disable(true);
 		},
 		enableNextBtn: function(){
 			if(this.is("#rootwizard")){
@@ -100,28 +119,27 @@ function onBeforeNext(e){
 			}
 		},
 		isBackEnabled: function(){
-			if(this.is('#rootwizard')) return (!$(".button-previous").is(":disabled"))?true:false;
+			if(this.is('#rootwizard')) return ($(".button-previous").is(":disabled"))?false:true;
 		},
 		isNextEnabled: function(){
-			if(this.is('#rootwizard')) return (!$(".button-next").is(":disabled"))?true:false;
+			if(this.is('#rootwizard')) return ($(".button-next").is(":disabled"))?true:false;
 		},
 		stepCheck: function(hide){
 			if(this.is('#rootwizard')){
-				if(_.isUndefined(hide)){
-					$("#wizardTabs li").eq(this.currentStep()).find('i').removeClass("hide");
-				} else if(hide){
-					$("#wizardTabs li").eq(this.currentStep()).find('i').addClass("hide");
-				}
+				if(_.isUndefined(hide)) $("#wizardTabs li").eq(this.currentStep()).find('i').removeClass("hide");
+				else if(hide) $("#wizardTabs li").eq(this.currentStep()).find('i').addClass("hide");
 			}
 		},
 		finishStep: function(){
 			if(this.is('#rootwizard')){
 				this.addFinished(this.currentStep());
+
 				this.stepCheck();
 				this.enableNextTab();
-				this.setProgress(this.finishedSteps()*20);
+				this.setProgress(this.getProgress()+20);
 				this.enableNextBtn();
-				this.find(".button-next").qpop("Step "+(this.getStep()+1)+" Complete",true,"left","manual");
+				this.find(".button-next").qpop("Step "+(this.nextStep())+" Complete",true,"left","manual");
+				_.l0g(this.data());
 			}
 		},
 		unfinishStep: function(){
@@ -129,9 +147,10 @@ function onBeforeNext(e){
 				this.removeFinished();
 				this.stepCheck(true);
 				this.disableNextTab()
-				this.setProgress(this.finishedSteps()*20);
+				this.setProgress(this.getProgress()-20);
 				this.disableNextBtn();
 				this.find(".button-next").popover('destroy');
+				_.l0g(this.data());
 			}
 		},
 		updateSizesTotal: function(){
@@ -209,14 +228,14 @@ function onBeforeNext(e){
 		'nextSelector': '.button-next',
 		'previousSelector': '.button-previous',
 		'onInit': function(){
+			_.l0g('whammy: ');
+			_.l0g($("#rootwizard").data());
+			$("#rootwizard").disableNextBtn();
+
 			$(document).keydown(function(e){
 				switch(e.keyCode){
-					case 37: //left
-						if($("#rootwizard").isBackEnabled()) $(".button-previous").trigger('click');
-					break;
-					case 39: //right
-						if($("#rootwizard").isNextEnabled()) $(".button-next").trigger('click');
-					break;
+					case 37: /*left*/  if($("#rootwizard").isBackEnabled()) $(".button-previous").click(); break;
+					case 39: /*right*/ if($("#rootwizard").isNextEnabled()) $(".button-next").click(); break;
 				}
 			});
 
@@ -390,8 +409,7 @@ function onBeforeNext(e){
 			//return false;
 		},
 		'onTabShow': function(tab,navigation,index){
-			$("#rootwizard").data('step',index+1);
-			_.l0g($("#rootwizard").data());
+			_.l0g($("#rootwizard").activeTab();
 		},
 		'onFirst': function(tab,navigation,index){
 
@@ -401,7 +419,7 @@ function onBeforeNext(e){
 		},
 		'onNext': function(tab,navigation,index){
 			$("input[type=text]:first").focus();
-			$("#rootwizard .button-next").popover('destroy');
+			$("#rootwizard .button-next").popover('destroy').disableNextBtn();
 		},
 
 
