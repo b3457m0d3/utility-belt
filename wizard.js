@@ -22,14 +22,11 @@ function onBeforeNext(e){
 		formToObj: function(){
 			if(this.is('form')){
 				var o = {}, a = this.serializeArray();
-				$.each(a, function() {
-					if (_.isUndefined(o[this.name])) {
-						if (!o[this.name].push)
-							o[this.name] = [o[this.name]];
+				$.each(a, function() { if (_.isUndefined(o[this.name])) {
+						if (!o[this.name].push) o[this.name] = [o[this.name]];
 						o[this.name].push(this.value || '');
 					} else o[this.name] = this.value || '';
-				});
-				return o;
+				}); return o;
 			}
 		},
 		sumFields: function(){
@@ -92,8 +89,8 @@ function onBeforeNext(e){
 				this.find(".button-next").popover('destroy');
 			}
 		},
-		isfinished: function(step){
-			if(this.is($.wiz)) return ($.inArray(step,this.done(true))>-1)?true:false;
+		isfinished: function(){
+			if(this.is($.wiz)) return $("#wizardTabs li").eq(this.active()).find('i').hasClass("hide");
 		},
 		// disabling things
 		disable: function(state) {
@@ -303,6 +300,7 @@ function onBeforeNext(e){
 					}
 			    },
 			    success: function() {
+					//get the image data from the preview pane and put it in the 5th tab
 					$.wiz.finish();
 			    }
 			});
