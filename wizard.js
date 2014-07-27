@@ -58,8 +58,12 @@ function onBeforeNext(e){
 				});
 			},
 			'beforeNext': function(parent,panel){
-				var id = panel.id; if(id == "items"){ } else if(id == "info"){
-					if(!$.form.info.valid()){ onBeforeNext(); $.form.info.focusInvalid(); } else $.form.info.data('info',$.form.info.formToObj());
+				var id = panel.id;
+				if(id == "items"){
+				} else if(id == "info"){
+					if(!$.form.info.valid()){
+						onBeforeNext(); $.form.info.focusInvalid();
+					} else $.form.info.data('info',$.form.info.formToObj());
 				} else if(id == "address"){ if(!$.form.address.valid()){ onBeforeNext(); $.form.address.focusInvalid(); } else $.form.address.data('address',$.form.address.formToObj()); }
 			},
 			'onNext': function(parent,panel){
