@@ -2,167 +2,130 @@ function onBeforeNext(e){
 	e.preventDefault();
 }
 (function($,_){
-	$('body').on('click', 'a.disabled', function(e) {
-		e.preventDefault();
-	});
+	$.wiz = $("#rootwizard");
+	$._wiz = $('.acc-wizard');
+	$.btn = {"prev":$(".button-previous"),"next":$(".button-next")};
 	$(document).ajaxStart(function(){
 
 	});
 	_.templateSettings = { variable:'data',interpolate: /\{\{=(.+?)\}\}/g, evaluate:/\{\{(.+?)\}\}/g, escape:/\{\{-(.+?)\}\}/g };
 	var funcs = _.extend(_.str.exports(),{
 		l0g: function(msg){
-			if(_.isNumber(msg) || _.isString(msg) || _.isBoolean(msg)){
-				console.log(msg);
-			} else if(_.isObject(msg)){
-				_.each(msg, function(value,key,list){
-					console.log("["+key+"] = "+value);
-				});
-			} else if(_.isArray(msg)){
-				_.each(msg, function(element,index,list){
-					console.log("["+index+"] = "+element);
-				});
-			}
+			if(_.isNumber(msg) || _.isString(msg) || _.isBoolean(msg)) console.log(msg);
+			else if(_.isObject(msg)) _.each(msg, function(value,key,list){ console.log("["+key+"] = "+value); });
+			else if(_.isArray(msg))  _.each(msg, function(element,index,list){ console.log("["+index+"] = "+element); });
 		}
 	});
 	_.mixin(funcs);
 	jQuery.fn.extend({
-		disable: function(state) {
-			return this.each(function() {
-				var $this = $(this);
-				if($this.is('input, button')) this.disabled = state;
-				else $this.toggleClass('disabled', state);
-			});
-		},
+		//form helpers
 		formToObj: function(){
 			if(this.is('form')){
 				var o = {}, a = this.serializeArray();
 				$.each(a, function() {
-					if (o[this.name] !== undefined) {
-						if (!o[this.name].push) o[this.name] = [o[this.name]];
+					if (_.isUndefined(o[this.name])) {
+						if (!o[this.name].push)
+							o[this.name] = [o[this.name]];
 						o[this.name].push(this.value || '');
 					} else o[this.name] = this.value || '';
 				});
 				return o;
 			}
 		},
-		getProgress: function(){
-			if(this.is("#rootwizard")) return this.data('progress');
+		sumFields: function(){
+			if(this.is('form')) var sum = 0; this.find('input[type=text]').each(function(){ sum += Number($(this).val()); });
 		},
-		setProgress: function(progress){
-			if(this.is("#rootwizard")){
-				var finished = (this.finishedSteps()<1)?1:this.finishedSteps();
-				if(progress<(finished*20)){
-					this.data('progress', progress);
-					this.find('.progress-bar').css({width:progress+'%'});
-				}
+		// steps
+		all: function(){
+			if(this.is()) return $("#wizardTabs li").length;
+		},
+		done: function(array){
+			if(this.is($.wiz)) return (_.isUndefined(array)) ? $("#wizardTabs li a i").filter(":visible").length : this.data('finished');
+		},
+		left: function(){
+			if(this.is($.wiz)) return $("#wizardTabs li a.disabled").length;
+		},
+		active: function(){
+			if(this.is($.wiz)){
+				this.data("step",$("#wizardTabs li.active a").attr("href").match(/\d+$/)[0];);
+				return this.data('step');
 			}
 		},
-		activeTab: function(){
-			if(this.is("#rootwizard")) return $("#wizardTabs li.active a").attr("href");
+		barCalc: function(){
+			var done = this.done(), left = this.left(), all = this.all(), per = Math.round(100/all);
+			if((done+left) === all) return done*per;
 		},
-		totalSteps: function(){
-			if(this.is("#rootwizard")) return $("#wizardTabs li").length;
-		},
-		finishedSteps: function(array){
-			if(this.is("#rootwizard")) return (_.isUndefined(array) || array == false)? this.data('finished').length : this.data('finished');
-		},
-		remainingSteps: function(){
-			if(this.is("#rootwizard")) return $("#wizardTabs li a.disabled").length;
-		},
-		currentStep: function(){
-			if(this.is("#rootwizard")) return this.data('step');
-		},
-		previousStep: function(){
-			if(this.is("#rootwizard")) return (this.data('step')>0)? this.data('step')-1 : false;
-		},
-		nextStep: function(){
-			if(this.is("#rootwizard")) return (this.data('step')<this.totalSteps())? this.data('step')+1 : false;
-		},
-		addFinished: function(step){
-			if(this.is("#rootwizard")){
-				this.data('finished').push(step);
-				this.data('step',step+1);
+		// progress bar
+		bar: function(){
+			if(this.is($.wiz)){
+				var bar = this.find('.progress-bar').css('width'), progress = this.barCalc();
+				if(bar<progress) this.data('progress', progress).find('.progress-bar').css({width:progress+'%'});
 			}
 		},
-		removeFinished: function(step){
-			if(this.is("#rootwizard")){
-				if(_.isUndefined(step)){
-					this.data('finished').pop();
-				} else if(!isNaN(step)){
-					var finished = this.finishedSteps(true);
-					if($.inArray(step,finished)){
-						var newList = _.without(finished,step);
-						this.removeData('finished');
-						this.data('finished', newList)
-					}
-				} else {
-					_.l0g("illegal parameter: must have 0 params OR the only param must be a number");
-				}
-			}
+		prev: function(){
+			if(this.is($.wiz)) return (this.data('step')>1)? this.data('step')-1 : 1;
 		},
-		enableNextTab: function(){
-			if(this.is("#rootwizard")) $("#wizardTabs li a").eq(this.nextStep()).disable(false);
+		next: function(){
+			if(this.is($.wiz)) return (this.data('step')<this.all())? this.data('step')+1 : this.all();
 		},
-		disableNextTab: function(){
-			if(this.is("#rootwizard")) $("#wizardTabs li a").eq(this.nextStep()).disable(true);
-		},
-		enableNextBtn: function(){
-			if(this.is("#rootwizard")){
-				this.find(".button-next").disable(false);
-				this.data('next-enabled',true);
-			}
-		},
-		disableNextBtn: function(){
-			if(this.is("#rootwizard")){
-				this.find(".button-next").disable(true);
-				this.data('next-enabled',false);
-			}
-		},
-		isBackEnabled: function(){
-			if(this.is('#rootwizard')) return ($(".button-previous").is(":disabled"))?false:true;
-		},
-		isNextEnabled: function(){
-			if(this.is('#rootwizard')) return ($(".button-next").is(":disabled"))?true:false;
-		},
-		stepCheck: function(hide){
+		check: function(hide){
 			if(this.is('#rootwizard')){
-				if(_.isUndefined(hide)) $("#wizardTabs li").eq(this.currentStep()).find('i').removeClass("hide");
-				else if(hide) $("#wizardTabs li").eq(this.currentStep()).find('i').addClass("hide");
+				if(_.isUndefined(hide)) $("#wizardTabs li").eq(this.active()).find('i').removeClass("hide");
+				else if(hide) $("#wizardTabs li").eq(this.active()).find('i').addClass("hide");
 			}
 		},
-		finishStep: function(){
+		finish: function(){
 			if(this.is('#rootwizard')){
-				this.addFinished(this.currentStep());
-
-				this.stepCheck();
-				this.enableNextTab();
-				this.setProgress(this.getProgress()+20);
-				this.enableNextBtn();
-				this.find(".button-next").qpop("Step "+(this.nextStep())+" Complete",true,"left","manual");
-				_.l0g(this.data());
+				this.addFinished();
+				this.check();
+				this.setProgress();
+				this.enableNext();
+				this.find(".button-next").qpop("Step "+(this.next())+" Complete",true,"left","manual");
 			}
 		},
-		unfinishStep: function(){
+		undo: function(){
 			if(this.is('#rootwizard')){
 				this.removeFinished();
-				this.stepCheck(true);
-				this.disableNextTab()
-				this.setProgress(this.getProgress()-20);
-				this.disableNextBtn();
+				this.check(true);
+				this.setProgress(this.);
+				this.disableNext();
 				this.find(".button-next").popover('destroy');
-				_.l0g(this.data());
 			}
 		},
-		updateSizesTotal: function(){
-			if(this.is('#garmentForm'))
-				this.find('input[type=text]').each(function(){ this.data('total') += Number($(this).val()); });
+		isfinished: function(step){
+			if(this.is($.wiz)) return ($.inArray(step,this.done(true))>-1)?true:false;
+		},
+		// disabling things
+		disable: function(state) {
+			return this.each(function() {
+				var $this = $(this);
+				if($this.is('input, button')) $this.disabled = state;
+				else $this.toggleClass('disabled', state);
+			});
+		},
+		disableNext: function(){
+			if(this.is($.wiz)){
+				$("#wizardTabs li").eq(this.next()).disable(true);
+				this.find(".button-next").disable(true).data('next-enabled',false);
+			}
+		},
+		// enabling things
+		enableNext: function(){
+			if(this.is($.wiz)){
+				$("#wizardTabs li").eq(this.next()).disable(false);
+			    this.find(".button-next").disable(false).data('next-enabled',true);
+			}
+		},
+		prevOn: function(){
+			if(this.is('#rootwizard')) return !$.prev.is(":disabled");
+		},
+		nextOn: function(){
+			if(this.is('#rootwizard')) return !$.next.is(":disabled");
 		}
 	});
-
 	$(window).load(function(){
-		$('.acc-wizard').accwizard({
+		$._wiz.accwizard({
 			'onInit': function(){
-
 				var tto = {placement:"bottom"}
 				$("#form-info").validate({
 					rules: {
@@ -187,26 +150,20 @@ function onBeforeNext(e){
 					},
 					tooltip_options: {add1: tto,city: tto,state: tto,zip: tto}
 				});
-
 			},
 			'beforeNext': function(parent,panel){
 				var id = panel.id;
 				if(id == "items"){
-
 				} else if(id == "info"){
 					if(!$("#form-info").valid()){
 						onBeforeNext();
 						$("#form-info").focusInvalid();
-					} else {
-						$("#form-info").data('info',$("#form-info").formToObj());
-					}
+					} else $("#form-info").data('info',$("#form-info").formToObj());
 				} else if(id == "address"){
 					if(!$("#form-address").valid()){
 						onBeforeNext();
 						$("#form-address").focusInvalid();
-					} else {
-						$("#form-address").data('address',$("#form-address").formToObj());
-					}
+					} else $("#form-address").data('address',$("#form-address").formToObj());
 				}
 			},
 			'onNext': function(parent,panel){
@@ -224,21 +181,18 @@ function onBeforeNext(e){
 		});
 	});
 
-	$("#rootwizard").bootstrapWizard({
+	$.wiz.bootstrapWizard({
 		'nextSelector': '.button-next',
 		'previousSelector': '.button-previous',
 		'onInit': function(){
-			_.l0g('whammy: ');
-			_.l0g($("#rootwizard").data());
-			$("#rootwizard").disableNextBtn();
-
+			$('#wizardTabs li').hasClass('disabled').find('a').on('click', function(e) { e.preventDefault(); });
+			$.wiz.disableNext();
 			$(document).keydown(function(e){
-				switch(e.keyCode){
-					case 37: /*left*/  if($("#rootwizard").isBackEnabled()) $(".button-previous").click(); break;
-					case 39: /*right*/ if($("#rootwizard").isNextEnabled()) $(".button-next").click(); break;
+				switch(e.which){
+					case 37: if($.wiz.prevOn()) $.btn.prev.click(); break;
+					case 39: if($.wiz.nextOn()) $.btn.next.click(); break;
 				}
 			});
-
 			// #tab1
 			$("#productSelect").imagepicker({
 				initialized:function(){
@@ -253,10 +207,10 @@ function onBeforeNext(e){
 								$("#tab1").data('product',$(this).val());
 								$("#tab5 img.product").attr("src",$("#productSelect option:selected").data("img-src"));
 								$("#otherInput").hide();
-								$("#rootwizard").finishStep();
+								$.wiz.finish();
 							}
 						});
-					} else {
+					} else if($("#productSelect option:selected").val()>0 && $("#productSelect option:selected").val() != 9){
 						$("#otherInput").hide();
 					}
 				},
@@ -265,30 +219,29 @@ function onBeforeNext(e){
 					if(newVal>0 && newVal !== 9){ // if anything was selected except other
 						$("#tab1").data("product",$option.text());
 						$("#tab5 img.product").attr("src",$option.data('img-src'));
-						$("#rootwizard").finishStep();
+						$.wiz.finish();
 						return;
 					}
 					if(oldVal>0 && newVal<1){ // if a product was selected and then un-selected
 						$("#tab1").data('product',null);
-						$("#rootwizard").unfinishStep();
+						$.wiz.undo();
 						return;
 					}
 				}
 			});
-
 			// #tab2
 			$("#pr,#noArtwork,#hasArtwork").hide();
 			$("#hasArt").switchy();
 			$('.has-art').on('click', function(){ $('#hasArt').val($(this).attr('state')).change(); });
 			$('#hasArt').on('change', function(){
-				var bgColor = '#949494';
+			    var bgColor = '#949494';
 				switch($(this).val()){
-					case 'yes':
+				    case 'yes':
 						bgColor = '#1085c2';
 						$("#pr").show();
 						$("#noArtwork,#noState,#hasArtwork").hide();
 					break;
-					case 'null':
+			        case 'null':
 						bgColor = '#949494';
 						$("#noState").show();
 						$("#noArtwork,#pr,#hasArtwork").hide();
@@ -298,8 +251,8 @@ function onBeforeNext(e){
 						$("#noArtwork").show();
 						$("#pr,#noState,#hasArtwork").hide();
 					break;
-				}
-				$('#hasArt').find('.switchy-bar').animate({ backgroundColor: bgColor });
+			    }
+			    $('#hasArt').find('.switchy-bar').animate({ backgroundColor: bgColor });
 			});
 			$("[rel=popover]").popover();
 			$("#printReady").switchy();
@@ -315,25 +268,20 @@ function onBeforeNext(e){
 			});
 			$("#noArt").click(function(){
 				$("#tab2").data('art','Custom Design Requested');
-				$("#rootwizard").finishStep();
+				$.wiz.finish();
 			});
 			$("#uploadArtwork").ajaxForm({
 				target: "#output",
 				resetForm: false,
 				clearForm: false,
-				beforeSend: function(arr,$form,options) {
-					if (window.File && window.FileReader && window.FileList && window.Blob) {
+			    beforeSend: function(arr,$form,options) {
+			        if (window.File && window.FileReader && window.FileList && window.Blob) {
 						var files = $form.files; // FileList object
 						if(files.length>0){
 							for (var i in files) {
 								var size = files[i].size, type = files[i].type;
 								switch(type){
-									case 'image/svg+xml':
-									case 'image/png':
-									case 'image/gif':
-									case 'image/jpeg':
-									case 'image/pjpeg':
-									case 'application/pdf':
+									case 'image/svg+xml': case 'image/png': case 'image/gif': case 'image/jpeg': case 'image/pjpeg': case 'application/pdf':
 									case 'application/x-zip-compressed':  break;
 									default:
 										$("#output").html("File(s) must be in svg,png,gif,jpeg,pdf or zip format");
@@ -341,7 +289,7 @@ function onBeforeNext(e){
 										return false;
 									break;
 								}
-								if(size>5242880){
+							    if(size>5242880){
 									$("#output").html("File(s) should be less than 5 MB");
 									$("#uploadAlert").removeClass("hide");
 									return false;
@@ -349,35 +297,37 @@ function onBeforeNext(e){
 							}
 						}
 					} else {
-						$("#output").html("Looks like it's time to upgrade your browser.");
+					    $("#output").html("Looks like it's time to upgrade your browser.");
 						$("#uploadAlert").removeClass("hide");
 						return false;
 					}
-				},
-				success: function() {
-					$("#rootwizard").finishStep();
-				}
+			    },
+			    success: function() {
+					$.wiz.finish();
+			    }
 			});
-
 			// #tab3
 			if($("#location").val().length>0){
 				$("#addLocation").removeClass('disabled').on('click',function(){
 					$("#tab3").data('location', $("#location").val());
-					$("#rootwizard").finishStep();
+					$.wiz.finish();
 				});
-				$("#location").keypress(function(e){
-					if(e.which == 13) $("#addLocation").click()
-				});
+				$("#location").keypress(function(e){ if(e.which == 13) $("#addLocation").click(); });
 			}
-
 			// #tab4
 			$(".selectpicker").selectpicker();
-			$("#garmentForm input[type=text]");
-
 			$("#addGarment").click(function(){
-
+				$(this)
+				var _li = _.template($("script.li").html()), _tr = _.template($("script.tr").html()), garmentData = {
+					"color":  $('select.selectpicker option:selected').text(),
+					"swatch": $('select.selectpicker option:selected').data('content'),
+					"total":  $("#garmentForm").data('total'),
+					"sizes":  _.map(Array(6), function(){ return 0; })
+				};
+				$("#garmentForm").find("input[type=text]").each(function(i){
+					garmentData.sizes[i] = $(this).val();
+				});
 			});
-
 			// #tab5
 			$("#addToQuote").click(function(){
 				var cAndS = [], _qi = _.template($("script.qi").html());
@@ -385,9 +335,8 @@ function onBeforeNext(e){
 					if(!_.isEmpty($(this).data())) cAndS.push($(this).data());
 					$(this).removeData();
 				});
-				var $itemData = $("#form-items").data('items'), _id = (_.isEmpty($itemData))?0:$itemData.length;
-				var $id = {
-					"id": _id,
+				var $itemData = $("#form-items").data('items'), _id = (_.isEmpty($itemData))?0:$itemData.length, $id = {
+					"id":      _id,
 					"product": $("#tab1").data('product'),
 					"brand":   $("#tab1").data('brand'),
 					"blend":   $("#tab1").data('blend'),
@@ -399,30 +348,30 @@ function onBeforeNext(e){
 				};
 				$("#form-items").data('items').push($id);
 				$("#listOfItems").append(_qi($id));
-
 			});
 		},
 		'onShow': function(){
-
+			//
 		},
 		'onTabClick': function(tab,navigation,index){
 			//return false;
 		},
 		'onTabShow': function(tab,navigation,index){
-			_.l0g($("#rootwizard").activeTab();
+			$.wiz.active();
+			$("input[type=text]:first").focus();
 		},
 		'onFirst': function(tab,navigation,index){
-
+			//
 		},
 		'onLast': function(tab,navigation,index){
-
+			//
 		},
 		'onNext': function(tab,navigation,index){
-			$("input[type=text]:first").focus();
-			$("#rootwizard .button-next").popover('destroy').disableNextBtn();
-		},
-
-
+			$.wiz.find(".button-next").popover('destroy');
+			if(!$.wiz.isfinished($.wiz.active())){
+				$.wiz.disableNext();
+			}
+		}
 	});
 
 })(jQuery,_);
