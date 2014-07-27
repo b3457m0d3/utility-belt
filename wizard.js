@@ -37,12 +37,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 				$.form.info.validate({ rules: { fName:"required",lName:"required",phone:{required:true,phoneUS:true},email:{required:true,email:true},add1B:"required",cityB:"required",stateB:"required",zipB:{required:true,zipUS:true}},messages:{phone:"Please supply a valid phone number",email:"Please provide a working email address"},tooltip_options:{fName:tto,lName:tto,phone:tto,email:tto,add1B:tto,cityB:tto,stateB:tto,zipB:tto}});
 				$.form.address.validate({rules:{ add1:"required",city:"required",state:"required",zip:{required:true,zipUS:true} },tooltip_options:{add1:tto,city:tto,state:tto,zip:tto} });
 			},
-			'beforeNext': function(parent,panel){
-				switch(panel.id){ case "items": break;
-					case "info":if(!$.form.info.valid()){ onBeforeNext(); $.form.info.focusInvalid();} else $.form.info.data('info',$.form.info.formToObj()); break;
-					case "address": if(!$.form.address.valid()){ onBeforeNext(); $.form.address.focusInvalid(); } else $.form.address.data('address',$.form.address.formToObj()); break;
-				}
-			},
+			'beforeNext': function(parent,panel){ switch(panel.id){ case "items": break; case "info":if(!$.form.info.valid()){ onBeforeNext(); $.form.info.focusInvalid();} else $.form.info.data('info',$.form.info.formToObj()); break; case "address": if(!$.form.address.valid()){ onBeforeNext(); $.form.address.focusInvalid(); } else $.form.address.data('address',$.form.address.formToObj()); break; } },
 			'onNext': function(parent,panel){},
 			'beforeBack': function(parent,panel){},
 			'onBack': function(parent,panel){},
@@ -56,9 +51,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 			$.ctrl.product.imagepicker({
 				initialized:function(){ $("#otherInput").hide(); },
 				clicked:function(options){},
-				selected:function(options){ var $other=$("#otherInput"),opt=$.ctrl.product.find("option:selected"),tab1=$("#tab1").data(),img=$("img.product");
-					if(opt.val()==9){$other.show();$other.find("input").focus().keydown(function(e){if(e.which==13){tab1.product=$(this).val();img.attr("src",opt.data("img-src"));$other.hide();$.wiz.h._finish();}}); } else if(opt.val()>0&&opt.val()!=9)$other.hide();
-				},
+				selected:function(options){ var $other=$("#otherInput"),opt=$.ctrl.product.find("option:selected"),tab1=$("#tab1").data(),img=$("img.product"); if(opt.val()==9){$other.show();$other.find("input").focus().keydown(function(e){if(e.which==13){tab1.product=$(this).val();img.attr("src",opt.data("img-src"));$other.hide();$.wiz.h._finish();}}); } else if(opt.val()>0&&opt.val()!=9)$other.hide(); },
 				changed:function(ov,nv){
 					var opt = $.ctrl.product.find("option:selected"), tab1 = $("#tab1").data(), img = $("img.product");
 					if(nv>0 && nv!==9){ tab1.product=opt.text(); img.attr("src",opt.data('img-src')); $.wiz.h._finish(); return; }
@@ -66,12 +59,10 @@ function onBeforeNext(e){ e.preventDefault(); }
 				}
 			});
 // #tab2========================================================================
-			$("#pr,#noArtwork,#hasArtwork").hide();
-			$("#hasArt").switchy();
+			$("#pr,#noArtwork,#hasArtwork").hide(); $("#hasArt").switchy();
 			$('.has-art').on('click', function(){ $('#hasArt').val($(this).attr('state')).change(); });
 			$('#hasArt').on('change', function(){ var bgColor = '#949494';
-				switch($(this).val()){
-				    case 'yes':  bgColor = '#1085c2'; $("#pr").show(); $("#noArtwork,#noState,#hasArtwork").hide(); break;
+				switch($(this).val()){ case 'yes':  bgColor = '#1085c2'; $("#pr").show(); $("#noArtwork,#noState,#hasArtwork").hide(); break;
 			        case 'null': bgColor = '#949494'; $("#noState").show(); $("#noArtwork,#pr,#hasArtwork").hide(); break;
 					case 'no':   bgColor = '#eac120'; $("#noArtwork").show(); $("#pr,#noState,#hasArtwork").hide(); break;
 			    } $('#hasArt').find('.switchy-bar').animate({ backgroundColor: bgColor });
@@ -85,25 +76,22 @@ function onBeforeNext(e){ e.preventDefault(); }
 			});	$("#noArt").click(function(){ $("#tab2").data('art','Custom Design Requested'); $.wiz.h._finish(); });
 			$.form.upload.ajaxForm({ target: "#output", resetForm: false, clearForm: false,
 			    beforeSend: function(arr,$form,options) {
-			        if(λ.File && λ.FileReader && λ.FileList && λ.Blob) {
-						var files = $form.files; // FileList object
+			        if(λ.File && λ.FileReader && λ.FileList && λ.Blob) { var files = $form.files; // FileList object
 						if(files.length>0){
 							for (var i in files) { var size = files[i].size, type = files[i].type;
-								switch(type){
-									case 'image/svg+xml': case 'image/png': case 'image/gif': case 'image/jpeg': case 'image/pjpeg': case 'application/pdf':
-									case 'application/x-zip-compressed':  break;
-									default: $.form.upload.uploaderror("File(s) must be in svg,png,gif,jpeg,pdf or zip format"); break;
+								switch(type){ case 'image/svg+xml': case 'image/png': case 'image/gif': case 'image/jpeg': case 'image/pjpeg': case 'application/pdf':
+									case 'application/x-zip-compressed':  break; default: $.form.upload.uploaderror("File(s) must be in svg,png,gif,jpeg,pdf or zip format"); break;
 								} if(size>5242880) $.form.upload.uploaderror("File(s) should be less than 5 MB");
 							}
 						}
 					} else $.form.upload.uploaderror("Looks like it's time to upgrade your browser.");
 			    }, success: function() { $("#tab2").data('art',$('.zip').html()); $.wiz.h._finish(); }
 			});
-			// #tab3
+// #tab3========================================================================
 			if($("#location").val().length>0){
 				$("#addLocation").removeClass('disabled').on('click',function(){ $("#tab3").data('location', $("#location").val()); $.wiz.h._finish(); });
 				$("#location").keypress(function(e){ if(e.which == 13) $("#addLocation").click(); }); }
-			// #tab4
+// #tab4========================================================================
 			$(".selectpicker").selectpicker();
 			$.form.garments.find("input[type='text']").keypress(function(e){ var k=e.which; if(k!=8 && k!=0 && (k<48 || k>57)){ $(this).toggleClass("field-error",true); return false; } else if(k == 13) $("#addGarment").click(); else $(this).toggleClass("field-error", false); });
 			$("#addGarment").click(function(){
@@ -114,7 +102,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 					"sizes":  _.map(Array(6), function(){ return 0; })
 				}; $.form.garments.find("input[type=text]").each(function(i){ garmentData.sizes[i] = $(this).val(); });
 			});
-			// #tab5
+// #tab5========================================================================
 			$("#addToQuote").click(function(){ var cAndS = [], _qi = _.template($("script.qi").html());
 				$.each($("#colorsAndSizes tr"), function(){ if(!_.isEmpty($(this).data())){ cAndS.push($(this).data()); } $(this).removeData(); });
 				var tab1 = $("#tab1").data(), tab2 = $("#tab2").data(), tab3 = ("#tab3").data(), $itemData = $.form.items.data('items'), _id = (_.isEmpty($itemData))?0:$itemData.length,
@@ -129,5 +117,4 @@ function onBeforeNext(e){ e.preventDefault(); }
 		'onLast': function(tab,navigation,index){},
 		'onNext': function(tab,navigation,index){ $.wiz.h.find($.btn._next).popover('destroy'); if(!$.wiz.h.isfinished($.wiz.h.active())) $.wiz.h._disableNext(); }
 	});
-
 })(jQuery,_,window);
