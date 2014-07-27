@@ -2,166 +2,65 @@ function onBeforeNext(e){
 	e.preventDefault();
 }
 (function($,_){
-	$.wiz = $("#rootwizard");
-	$._wiz = $('.acc-wizard');
-	$.btn = {"prev":$(".button-previous"),"next":$(".button-next")};
+	$.wiz = { "h":$("#rootwizard"), "v":$('.acc-wizard') };
+	$.btn = {
+		"prev":$(".button-previous"), "_prev":".button-previous", "next":$$.btn._next, "_next":".button-next"
+	};
+	$.form = {
+		"items": $("#form-items"), "garments": $("#garmentForm"), "upload": $("#uploadArtwork"), "info":  $("#form-info"), "address": $("#form-address")
+	};
 	$(document).ajaxStart(function(){
 
 	});
 	_.templateSettings = { variable:'data',interpolate: /\{\{=(.+?)\}\}/g, evaluate:/\{\{(.+?)\}\}/g, escape:/\{\{-(.+?)\}\}/g };
 	var funcs = _.extend(_.str.exports(),{
 		l0g: function(msg){
-			if(_.isNumber(msg) || _.isString(msg) || _.isBoolean(msg)) console.log(msg);
-			else if(_.isObject(msg)) _.each(msg, function(value,key,list){ console.log("["+key+"] = "+value); });
-			else if(_.isArray(msg))  _.each(msg, function(element,index,list){ console.log("["+index+"] = "+element); });
+			if(_.isNumber(msg) || _.isString(msg) || _.isBoolean(msg)) console.log(msg); else if(_.isObject(msg)) _.each(msg, function(value,key,list){ console.log("["+key+"] = "+value); }); else if(_.isArray(msg)) _.each(msg, function(element,index,list){ console.log("["+index+"] = "+element); });
 		}
 	});
 	_.mixin(funcs);
-	jQuery.fn.extend({
-		//form helpers
-		formToObj: function(){
-			if(this.is('form')){
-				var o = {}, a = this.serializeArray();
-				$.each(a, function() { if (_.isUndefined(o[this.name])) {
-						if (!o[this.name].push) o[this.name] = [o[this.name]];
-						o[this.name].push(this.value || '');
-					} else o[this.name] = this.value || '';
-				}); return o;
-			}
-		},
-		sumFields: function(){
-			if(this.is('form')) var sum = 0; this.find('input[type=text]').each(function(){ sum += Number($(this).val()); });
-		},
-		// steps
-		all: function(){
-			if(this.is()) return $("#wizardTabs li").length;
-		},
-		done: function(array){
-			if(this.is($.wiz)) return (_.isUndefined(array)) ? $("#wizardTabs li a i").filter(":visible").length : this.data('finished');
-		},
-		left: function(){
-			if(this.is($.wiz)) return $("#wizardTabs li a.disabled").length;
-		},
-		active: function(){
-			if(this.is($.wiz)){
-				this.data("step",$("#wizardTabs li.active a").attr("href").match(/\d+$/)[0];);
-				return this.data('step');
-			}
-		},
-		barCalc: function(){
-			var done = this.done(), left = this.left(), all = this.all(), per = Math.round(100/all);
-			if((done+left) === all) return done*per;
-		},
-		// progress bar
-		bar: function(){
-			if(this.is($.wiz)){
-				var bar = this.find('.progress-bar').css('width'), progress = this.barCalc();
-				if(bar<progress) this.data('progress', progress).find('.progress-bar').css({width:progress+'%'});
-			}
-		},
-		prev: function(){
-			if(this.is($.wiz)) return (this.data('step')>1)? this.data('step')-1 : 1;
-		},
-		next: function(){
-			if(this.is($.wiz)) return (this.data('step')<this.all())? this.data('step')+1 : this.all();
-		},
-		check: function(hide){
-			if(this.is('#rootwizard')){
-				if(_.isUndefined(hide)) $("#wizardTabs li").eq(this.active()).find('i').removeClass("hide");
-				else if(hide) $("#wizardTabs li").eq(this.active()).find('i').addClass("hide");
-			}
-		},
-		finish: function(){
-			if(this.is('#rootwizard')){
-				this.addFinished();
-				this.check();
-				this.setProgress();
-				this.enableNext();
-				this.find(".button-next").qpop("Step "+(this.next())+" Complete",true,"left","manual");
-			}
-		},
-		undo: function(){
-			if(this.is('#rootwizard')){
-				this.removeFinished();
-				this.check(true);
-				this.setProgress(this.);
-				this.disableNext();
-				this.find(".button-next").popover('destroy');
-			}
-		},
-		isfinished: function(){
-			if(this.is($.wiz)) return $("#wizardTabs li").eq(this.active()).find('i').hasClass("hide");
-		},
-		// disabling things
-		disable: function(state) {
-			return this.each(function() {
-				var $this = $(this);
-				if($this.is('input, button')) $this.disabled = state;
-				else $this.toggleClass('disabled', state);
-			});
-		},
-		disableNext: function(){
-			if(this.is($.wiz)){
-				$("#wizardTabs li").eq(this.next()).disable(true);
-				this.find(".button-next").disable(true).data('next-enabled',false);
-			}
-		},
-		// enabling things
-		enableNext: function(){
-			if(this.is($.wiz)){
-				$("#wizardTabs li").eq(this.next()).disable(false);
-			    this.find(".button-next").disable(false).data('next-enabled',true);
-			}
-		},
-		prevOn: function(){
-			if(this.is('#rootwizard')) return !$.prev.is(":disabled");
-		},
-		nextOn: function(){
-			if(this.is('#rootwizard')) return !$.next.is(":disabled");
-		}
+	jQuery.fn.extend({// using a custom plugin library as an api * an underscore prefix indicates that a function is chainable
+		formToObj: function(){ if(this.is('form')){ var o = {}, a = this.serializeArray(); $.each(a, function() { if (_.isUndefined(o[this.name])) { if (!o[this.name].push){ o[this.name] = [o[this.name]]; } o[this.name].push(this.value || ''); } else o[this.name] = this.value || ''; }); return o; },
+		_inputsum: function(){ if(this.is('form')) sum = 0; this.find('input[type=text]').each(function(){ sum+=Number($(this).val()); }); return this; },
+		all:  function(){   if(this.is()) return $("#wizardTabs li").length; },
+		done: function(a){ if(this.is($.wiz)) return (_.isUndefined(a))?$("#wizardTabs li a i").filter(":visible").length:this.data('finished'); },
+		left: function(){  if(this.is($.wiz)) return $("#wizardTabs li a.disabled").length; },
+		active: function(){if(this.is($.wiz)) this.data("step",$("#wizardTabs li.active a").attr("href").match(/\d+$/)[0]); return this.data('step'); },
+		bar:  function(){ if(this.is($.wiz)) var done = this.done(), left = this.left(), all = this.all(), per = Math.round(100/all); if((done+left) === all) return done*per; },
+		_bar: function(){ if(this.is($.wiz)) var bar = this.find('.progress-bar').css('width'), progress = this.bar(); if(bar<progress){ this.data('progress', progress).find('.progress-bar').css({width:progress+'%'}); } return this; },
+		prev: function(){ if(this.is($.wiz)) return (this.active()>1)? this.active()-1 : 1; },
+		next: function(){ if(this.is($.wiz)) return (this.active()<this.all())? this.active()+1 : this.all(); },
+		_check: function(hide){ if(this.is($.wiz)) if(_.isUndefined(hide)) $("#wizardTabs li").eq(this.active()).find('i').removeClass("hide"); else if(hide){ $("#wizardTabs li").eq(this.active()).find('i').addClass("hide"); }	return this; },
+		_finish: function(){ if(this.is($.wiz)) this.check().bar().enableNext(); this.find(".button-next").qpop("Step "+(this.next())+" Complete",true,"left","manual"); return this; },
+		_undo:   function(){ if(this.is($.wiz)) this.check(true).bar().disableNext(); this.find($.btn._next).popover('destroy'); return this; },
+		isfinished: function(){ if(this.is($.wiz)) return ($("#wizardTabs li").eq(this.active()).find('i').hasClass("hide"))?false:true; },
+		disable: function(state){ return this.each(function() { var $this = $(this); if($this.is('input, button')) $this.disabled = state; else $this.toggleClass('disabled', state); }); },
+		_disableNext: function(){ if(this.is($.wiz)) $("#wizardTabs li").eq(this.next()).disable(true); this.find($.btn._next).disable(true).data('next-enabled',false); return this; },
+		_enableNext: function(){ if(this.is($.wiz)) $("#wizardTabs li").eq(this.next()).disable(false); this.find($.btn._next).disable(false).data('next-enabled',true); return this; },
+		backenabled: function(){ if(this.is($.wiz)) return !$.btn.prev.is(":disabled"); },
+		nextenabled: function(){ if(this.is($.wiz)) return !$.btn.next.is(":disabled"); }
 	});
 	$(window).load(function(){
 		$._wiz.accwizard({
 			'onInit': function(){
 				var tto = {placement:"bottom"}
-				$("#form-info").validate({
+				$.form.info.validate({
 					rules: {
-						fName: "required",
-						lName: "required",
-						phone: {required:true,phoneUS:true},
-						email: {required:true,email:true},
-						add1B: "required",
-						cityB: "required",
-						stateB: "required",
+						fName: "required",lName: "required",phone: {required:true,phoneUS:true},
+						email: {required:true,email:true},	add1B: "required",cityB: "required",stateB: "required",
 						zipB: {required:true,zipUS:true}
 					},
 					messages: {phone: "Please supply a valid phone number",email:"Please provide a working email address"},
 					tooltip_options: {fName:tto,lName:tto,phone:tto,email:tto,add1B:tto,cityB:tto,stateB:tto,zipB:tto}
 				});
-				$("#form-address").validate({
-					rules: {
-						add1: "required",
-						city: "required",
-						state: "required",
-						zip: {required:true,zipUS:true}
-					},
-					tooltip_options: {add1: tto,city: tto,state: tto,zip: tto}
+				$.form.address.validate({
+					rules: { add1: "required",city: "required",state: "required",zip: {required:true,zipUS:true} },tooltip_options: {add1: tto,city: tto,state: tto,zip: tto}
 				});
 			},
 			'beforeNext': function(parent,panel){
-				var id = panel.id;
-				if(id == "items"){
-				} else if(id == "info"){
-					if(!$("#form-info").valid()){
-						onBeforeNext();
-						$("#form-info").focusInvalid();
-					} else $("#form-info").data('info',$("#form-info").formToObj());
-				} else if(id == "address"){
-					if(!$("#form-address").valid()){
-						onBeforeNext();
-						$("#form-address").focusInvalid();
-					} else $("#form-address").data('address',$("#form-address").formToObj());
-				}
+				var id = panel.id; if(id == "items"){ } else if(id == "info"){
+					if(!$.form.info.valid()){ onBeforeNext(); $.form.info.focusInvalid(); } else $.form.info.data('info',$.form.info.formToObj());
+				} else if(id == "address"){ if(!$.form.address.valid()){ onBeforeNext(); $.form.address.focusInvalid(); } else $.form.address.data('address',$.form.address.formToObj()); }
 			},
 			'onNext': function(parent,panel){
 
@@ -182,7 +81,7 @@ function onBeforeNext(e){
 		'nextSelector': '.button-next',
 		'previousSelector': '.button-previous',
 		'onInit': function(){
-			$('#wizardTabs li').hasClass('disabled').find('a').on('click', function(e) { e.preventDefault(); });
+			$('#wizardTabs li').hasClass('disabled').find('a').on('click', function(e){ e.preventDefault(); });
 			$.wiz.disableNext();
 			$(document).keydown(function(e){
 				switch(e.which){
@@ -267,7 +166,7 @@ function onBeforeNext(e){
 				$("#tab2").data('art','Custom Design Requested');
 				$.wiz.finish();
 			});
-			$("#uploadArtwork").ajaxForm({
+			$.form.upload.ajaxForm({
 				target: "#output",
 				resetForm: false,
 				clearForm: false,
@@ -300,7 +199,6 @@ function onBeforeNext(e){
 					}
 			    },
 			    success: function() {
-					//get the image data from the preview pane and put it in the 5th tab
 					$.wiz.finish();
 			    }
 			});
@@ -314,17 +212,23 @@ function onBeforeNext(e){
 			}
 			// #tab4
 			$(".selectpicker").selectpicker();
+			$.form.garments.find("input[type='text']").keypress(function(e){
+				//block all but numbers and let the enter key through to
+				if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57)){
+					if(!$(this).hasClass("field-error")) $(this).addClass("field-error");
+					return false;
+				} else if(e.which !== 13) $("#addGarment").click();
+				else if($(this).hasClass("field-error")) $(this).removeClass("field-error");
+			});
 			$("#addGarment").click(function(){
-				$(this)
 				var _li = _.template($("script.li").html()), _tr = _.template($("script.tr").html()), garmentData = {
 					"color":  $('select.selectpicker option:selected').text(),
 					"swatch": $('select.selectpicker option:selected').data('content'),
-					"total":  $("#garmentForm").data('total'),
+					"total":  $.form.garments.data('total'),
 					"sizes":  _.map(Array(6), function(){ return 0; })
 				};
-				$("#garmentForm").find("input[type=text]").each(function(i){
-					garmentData.sizes[i] = $(this).val();
-				});
+				$.form.garments.find("input[type=text]").each(function(i){ garmentData.sizes[i] = $(this).val(); });
+
 			});
 			// #tab5
 			$("#addToQuote").click(function(){
@@ -333,7 +237,7 @@ function onBeforeNext(e){
 					if(!_.isEmpty($(this).data())) cAndS.push($(this).data());
 					$(this).removeData();
 				});
-				var $itemData = $("#form-items").data('items'), _id = (_.isEmpty($itemData))?0:$itemData.length, $id = {
+				var $itemData = $.form.items.data('items'), _id = (_.isEmpty($itemData))?0:$itemData.length, $id = {
 					"id":      _id,
 					"product": $("#tab1").data('product'),
 					"brand":   $("#tab1").data('brand'),
@@ -344,7 +248,7 @@ function onBeforeNext(e){
 					"loc":     $("#tab3").data('location'),
 					"notes":   $("#notes").val()
 				};
-				$("#form-items").data('items').push($id);
+				$.form.items.data('items').push($id);
 				$("#listOfItems").append(_qi($id));
 			});
 		},
@@ -365,10 +269,8 @@ function onBeforeNext(e){
 			//
 		},
 		'onNext': function(tab,navigation,index){
-			$.wiz.find(".button-next").popover('destroy');
-			if(!$.wiz.isfinished($.wiz.active())){
-				$.wiz.disableNext();
-			}
+			$.wiz.find$.btn._next.popover('destroy');
+			if(!$.wiz.isfinished($.wiz.active())) $.wiz.disableNext();
 		}
 	});
 
