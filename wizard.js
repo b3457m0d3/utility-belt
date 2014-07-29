@@ -34,33 +34,31 @@ function onBeforeNext(e){ e.preventDefault(); }
 			}
 		},
 		all:  function(){
-			if(this.is($.wiz.h)){ 										console.log("all - "+$("#wizardTabs li").length);
+			if(this.is($.wiz.h)){ 												console.log("all - "+$("#wizardTabs li").length);
 				return $("#wizardTabs li").length;
 			}
 		},
 		done: function(a){
-			if(this.is($.wiz.h)){										console.log("done - "+$("#wizardTabs li a i").filter(':visible').length);
+			if(this.is($.wiz.h)){												console.log("done - "+$("#wizardTabs li a i").filter(':visible').length);
 				return $("#wizardTabs li a i").filter(":visible").length;
 			}
 		},
 		left: function(){
-			if(this.is($.wiz.h)){ 										console.log("left - "+$("#wizardTabs li a i").filter(':hidden').length);
+			if(this.is($.wiz.h)){ 												console.log("left - "+$("#wizardTabs li a i").filter(':hidden').length);
 				return $("#wizardTabs li a i").filter(':hidden').length;
 			}
 		},
-		active: function(calc){
+		active: function(){
 			if(this.is($.wiz.h)){
-				if(!_.unDefined(calc) && calc){
-					var index = Number($("#wizardTabs li.active a").attr("href").match(/\d+$/)[0]);
-					this.data("step",index);									console.log("active - "+index);
-				}
+				var index = Number($("#wizardTabs li.active a").attr("href").match(/\d+$/)[0]);
+				this.data("step",index);										console.log("active - "+index);
 				return this.data('step');
 			}
 		},
 		bar:  function(){
 			if(this.is($.wiz.h)){
 				var done = Number(this.done()), left = Number(this.left()), all = Number(this.all()), per = Math.round(100/all);
-				if((done+left) === all){								console.log("bar - "+(done*per));
+				if((done+left) === all){										console.log("bar - "+(done*per));
 					return (done*per);
 				} else {
 					console.log('something doesnt add up - done:'+done+' left:'+left+' all:'+all+' per:'+per);
@@ -72,16 +70,11 @@ function onBeforeNext(e){ e.preventDefault(); }
 				var bar = $("#bar").find('.progress-bar'), progress = Number(this.bar());
 				var w = bar[0].style.width;
 				var barW = (w.search('px') > -1) ? w.replace('px','') : w.replace('%','');
-
-															console.log("progress-bar-width - "+barW+" - calculated progress - "+progress);
+																				console.log("progress-bar-width - "+barW+" - calculated progress - "+progress);
 				if(_.isUndefined(undo)){
-					if(barW<progress){
-						bar.css({width:progress+'%'});
-					}
+					if(barW<progress) bar.css({width:progress+'%'});
 				} else {
-					if(undo){
-						bar.css({width:progress+'%'});
-					}
+					if(undo) bar.css({width:progress+'%'});
 				}
 				return this;
 			}
@@ -89,14 +82,14 @@ function onBeforeNext(e){ e.preventDefault(); }
 		prev_: function(){
 			if(this.is($.wiz.h)){
 				var index = Number(this.active()), prev = index-1,
-					all = Number(this.all());							console.log("prev - "+ prev);
+					all = Number(this.all());									console.log("prev - "+ prev);
 				return (index>1)? prev : 1;
 			}
 		},
 		next_: function(){
 			if(this.is($.wiz.h)){
-				var index = Number(this.active()), next = index+1,
-				    all = Number(this.all());							console.log("next - "+ next);
+				var index = this.active();
+				var next = index+1,all = Number(this.all());                    console.log("next - "+ next);
 				return (index<all)? next : all;
 			}
 		},
@@ -133,26 +126,26 @@ function onBeforeNext(e){ e.preventDefault(); }
 			return this.each(function(){
 				var $this = $(this);
 				if($this.is('input, button')){
-					$this.disabled = state;							   console.log("disabled input");
+					$this.disabled = state;							   			console.log("disabled input");
 				} else {
-					$this.toggleClass('disabled', state);              console.log("disabled non input");
+					$this.toggleClass('disabled', state);              			console.log("disabled non input");
 				}
 			});
 		},
 		_disableNext: function(){
 			if(this.is($.wiz.h)){
-				$("#wizardTabs li").eq(this.next_()).disable(true);
-				this.find(".button-next").disable(true);
+				$("#wizardTabs li").eq(this.active()).disable(true);			console.log("next tab disabled");
+				this.find(".button-next").disable(true);                        console.log("next button disabled");
 				this.data('next-enabled',false);
 				return this;
 			}
 		},
 		_enableNext: function(){
 			if(this.is($.wiz.h)){
-				var next = Number(this.next_());
-				next = (next > 0)?next-1:
+				var next = Number(this.active());
 				$("#wizardTabs li").eq(next).removeClass('disabled');
-				this.find(".button-next").disable(false).data('next-enabled',true);
+				this.find(".button-next").disable(false);
+				this.data('next-enabled',true);
 				return this;
 			}
 		},
@@ -207,16 +200,16 @@ function onBeforeNext(e){ e.preventDefault(); }
 					break;
 				}
 			},
-			'onNext': function(parent,panel){                              console.log("acc-wiz - onNext");
+			'onNext': function(parent,panel){                              		console.log("acc-wiz - onNext");
 
 			},
-			'beforeBack': function(parent,panel){                          console.log("acc-wiz - beforeBack");
+			'beforeBack': function(parent,panel){                          		console.log("acc-wiz - beforeBack");
 
 			},
-			'onBack': function(parent,panel){                              console.log("acc-wiz - onBack");
+			'onBack': function(parent,panel){                              		console.log("acc-wiz - onBack");
 
 			},
-			'onLast': function(parent,panel){                                 console.log("acc-wiz - onLast");
+			'onLast': function(parent,panel){                                 	console.log("acc-wiz - onLast");
 
 			}
 		});
@@ -224,17 +217,18 @@ function onBeforeNext(e){ e.preventDefault(); }
 	$.wiz.h.bootstrapWizard({
 		'nextSelector': $.btn._next,
 		'previousSelector': $.btn._prev,
-		'onInit': function(){ 												  console.log("modal-wiz - onInit");
+		'onInit': function(){ 												  	console.log("modal-wiz - onInit");
 			$.wiz.h.active(true);
-			$.wiz.h._disableNext();                                           console.log("modal-wiz - next disabled");
-			$(document).keydown(function(e){								  console.log("modal-wiz - setup arrow keys");
+			$.wiz.h._disableNext();                                           	console.log("modal-wiz - next disabled");
+			$(document).keydown(function(e){								  	console.log("modal-wiz - setup arrow keys");
 				if(e.which == 37){
 					if($.wiz.h.backenabled()){
-						$.btn.prev.click();   								  console.log("modal-wiz - left key");
+						$.btn.prev.click();   								  	console.log("modal-wiz - left key");
 					}
-				if(e.which == 38)
+				}
+				if(e.which == 38){
 					if($.wiz.h.nextenabled()){
-						$.btn.next.click();    								  console.log("modal-wiz - right key");
+						$.btn.next.click();    								  	console.log("modal-wiz - right key");
 					}
 				}
 			});
@@ -243,14 +237,13 @@ function onBeforeNext(e){ e.preventDefault(); }
 			$.img = $("#tab5 img.product"), $.opt = $.productSelect.find("option:selected");
 
 			$.productSelect.imagepicker({
-				initialized:function(){  									console.log("productSelect - initialize");
+				initialized:function(){  										console.log("productSelect - initialize");
 					$.other.hide();
 				},
-				clicked:function(options){  								console.log("productSelect - clicked");
+				clicked:function(options){  									console.log("productSelect - clicked");
 				},
-				selected:function(options){ 								console.log("productSelect - selected");
-
-/*  */				if(options.value() == 9){								console.log("productSelect - selected 'other'");
+				selected:function(options){ 									console.log("productSelect - selected");
+					if(options.value() == 9){									console.log("productSelect - selected 'other'");
 						$.other.show().find("input").focus().keydown(function(e){
 							if(e.which == 13){
 								$.tab1.data('product',$(this).val());
@@ -259,21 +252,22 @@ function onBeforeNext(e){ e.preventDefault(); }
 								$.wiz.h._finish();
 							}
 						});
-					} else if(options.value()>0 && options.value() != 9){              console.log("productSelect - product selected -NOT 'other'");
+					} else if(options.value()>0 && options.value() != 9){       console.log("productSelect - product selected -NOT 'other'");
 						$.other.hide();
 						$.wiz.h._finish();
 
 					}
 				},
-				changed:function(oldVal,newVal){      										console.log("productSelect - changed from "+Number(oldVal)+" to "+Number(newVal));
+				changed:function(oldVal,newVal){      							console.log("productSelect - changed from "+Number(oldVal)+" to "+Number(newVal));
 					newVal = Number(newVal);
 					if(newVal>0 && newVal !== 9){
+						$.other.hide();
 						$.tab1.data("product",$.opt.text());
 						$.img.attr("src",$.opt.data('img-src'));
 						return;
 					} else if(newVal<1){
 						$.tab1.data('product', null);
-						$.wiz.h._undo();												console.log('undo');
+						$.wiz.h._undo();										console.log('undo');
 					}
 				}
 			});
@@ -282,7 +276,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 			$("#pr,#noArtwork,#hasArtwork").hide();
 			$("#hasArt").switchy();
 			$('.has-art').on('click', function(){ $('#hasArt').val($(this).attr('state')).change(); });
-			$('#hasArt').on('change', function(){ 					console.log("hasArt - changed"+$(this).val());
+			$('#hasArt').on('change', function(){ 					            console.log("hasArt - changed"+$(this).val());
 				var bgColor = '#949494';
 				switch($(this).val()){
 				    case 'yes':  bgColor = '#1085c2'; $("#pr").show(); $("#noArtwork,#noState,#hasArtwork").hide(); break;
@@ -294,7 +288,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 			$("[rel=popover]").popover();
 			$("#printReady").switchy();
 			$('.print-ready').on('click', function(){ $('#printReady').val($(this).attr('state')).change(); });
-			$('#printReady').on('change', function(){ 				console.log("printReady - changed - "+$(this).val());
+			$('#printReady').on('change', function(){ 				            console.log("printReady - changed - "+$(this).val());
 				var bgColor = '#949494';
 				switch($(this).val()){
 					case 'yes':  bgColor = '#1085c2'; $("#hasArtwork").show(); $("#tab2").data('vector',true); break;
@@ -303,7 +297,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 				}
 				$('#printReady').find('.switchy-bar').animate({ backgroundColor: bgColor });
 			});
-			$("#noArt").click(function(){  							console.log("custom design - clicked");
+			$("#noArt").click(function(){  										console.log("custom design - clicked");
 				$("#tab2").data('art','Custom Design Requested');
 				$.wiz.h._finish();
 			});
@@ -311,7 +305,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 				$(this).parent('.alert').addClass('hide');
 			});
 			$("#uploadArtwork").ajaxForm({ target: "#output", resetForm: false, clearForm: false,
-			    beforeSend: function(arr,$form,options) { 			console.log("uploadForm - beforeSend");
+			    beforeSend: function(arr,$form,options) { 						console.log("uploadForm - beforeSend");
 			        if(λ.File && λ.FileReader && λ.FileList && λ.Blob) {
 						var fileInput = document.querySelector("#Fileinput");
 						var files = fileInput.files;// FileList object
@@ -335,39 +329,47 @@ function onBeforeNext(e){ e.preventDefault(); }
 						return false;
 					}
 				},
-				success: function() { 								console.log("uploadForm - success");
+				success: function() { 											console.log("uploadForm - success");
 					$("#tab2").data('art',$('.zip').html());
 					$.wiz.h._finish();
 				}
 			});
 // #tab3====================================================================================================================================
-			if($("#location").val().length>0){
-				$("#addLocation").click(function(){ 				console.log("addLocation - submitted location");
-					$("#tab3").data('location', $("#location").val());
-					$.wiz.h._finish();
+
+			$("#location").on("focus", function(){
+				$("#addLocation").on("click",function(){ 				console.log("addLocation - submitted location");
+					if($("#location").val().length>0){
+						$("#tab3").data('location', $("#location").val());
+						$.wiz.h._finish();
+					}
 				});
-				$("#location").keypress(function(e){
-					if(e.which == 13)  $("#addLocation").click();
+				$(this).keypress(function(e){
+					if(e.which == 13){
+						$("#addLocation").click();							console.log('hit enter');
+					}
 				});
-			}
+			});
 // #tab4====================================================================================================================================
+
 			$(".selectpicker").selectpicker();
 			//add gildan colors
 			$("#garmentForm").find("input[type='text']").keypress(function(e){
 				var k=e.which;
 				if(k!=0 && k!=8 && k!=13 && (k<48 || k>57)){
-					$(this).toggleClass("field-error",true);		console.log("garmentForm - only numbers allowed");
+					$(this).toggleClass("field-error",true);					console.log("garmentForm - only numbers allowed");
 					return false;
 				} else if(k == 13){
 					 $("#addGarment").click();
-				} else $(this).toggleClass("field-error", false);
+				} else {
+					$(this).toggleClass("field-error", false);
+				}
 			});
-			$("#addGarment").click(function(){						console.log("addGarment - submitted colors and sizes");
+			$("#addGarment").click(function(){									console.log("addGarment - submitted colors and sizes");
 				var _li = _.template($("script.li").html()), _tr = _.template($("script.tr").html()),
 				garmentData = {
 					"color":  $('select.selectpicker option:selected').text(),
 					"swatch": $('select.selectpicker option:selected').data('content'),
-					"total":  $.form.garments.data('total'),
+					"total":  $("#garmentForm").data('total'),
 					"sizes":  _.map(Array(6), function(){ return 0; })
 				};
 				$("#garmentForm").find("input[type=text]").each(function(i){ garmentData.sizes[i] = $(this).val(); });
@@ -378,7 +380,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 				} else {
 					$("#garmentList").append(_li(garmentData));
 					$("#colorsAndSizes").append(_tr(garmentData));
-				}														console.log("addGarment - garment added");
+				}																console.log("addGarment - garment added");
 			});
 // #tab5====================================================================================================================================
 			$("#addToQuote").click(function(){
@@ -403,26 +405,26 @@ function onBeforeNext(e){ e.preventDefault(); }
 				$("#form-items").data('items').push($id);
 				if($("#listOfItems > li:first").is('.empty')) $("#listOfItems").empty();
 
-				$(_qi($id)).appendTo("#listOfItems");				console.log("addToQuote - added to quote");
+				$(_qi($id)).appendTo("#listOfItems");							console.log("addToQuote - added to quote");
 			});
 		},
-		'onShow': function(){										console.log("modal-wiz - onShow");
+		'onShow': function(){													console.log("modal-wiz - onShow");
 
 		},
-		'onTabClick': function(tab,navigation,index){				console.log("modal-wiz - onTabClick");
+		'onTabClick': function(tab,navigation,index){							console.log("modal-wiz - onTabClick");
 			return false;
 		},
-		'onTabShow': function(tab,navigation,index){				console.log("modal-wiz - onTabShow");
+		'onTabShow': function(tab,navigation,index){							console.log("modal-wiz - onTabShow");
 
 			$("input[type=text]:first").focus();
 		},
-		'onFirst': function(tab,navigation,index){					console.log("modal-wiz - onFirst");
+		'onFirst': function(tab,navigation,index){								console.log("modal-wiz - onFirst");
 
 		},
-		'onLast': function(tab,navigation,index){					console.log("modal-wiz - onLast");
+		'onLast': function(tab,navigation,index){								console.log("modal-wiz - onLast");
 
 		},
-		'onNext': function(tab,navigation,index){ 					console.log("modal-wiz - onNext");
+		'onNext': function(tab,navigation,index){ 								console.log("modal-wiz - onNext");
 			$.wiz.h.find($.btn._next).popover('destroy');
 		}
 	});
