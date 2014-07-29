@@ -48,10 +48,12 @@ function onBeforeNext(e){ e.preventDefault(); }
 				return $("#wizardTabs li a i").filter(':hidden').length;
 			}
 		},
-		active: function(){
+		active: function(calc){
 			if(this.is($.wiz.h)){
-				var index = Number($("#wizardTabs li.active").find('a').attr("href").match(/\d+$/)[0]);
-				this.data("step",index);								console.log("active - "+index);
+				if(!_.unDefined(calc) && calc){
+					var index = Number($("#wizardTabs li.active a").attr("href").match(/\d+$/)[0]);
+					this.data("step",index);									console.log("active - "+index);
+				}
 				return this.data('step');
 			}
 		},
@@ -61,15 +63,25 @@ function onBeforeNext(e){ e.preventDefault(); }
 				if((done+left) === all){								console.log("bar - "+(done*per));
 					return (done*per);
 				} else {
-
+					console.log('something doesnt add up - done:'+done+' left:'+left+' all:'+all+' per:'+per);
 				}
 			}
 		},
-		_bar: function(){
+		_bar: function(undo){
 			if(this.is($.wiz.h)){
-				var bar = Number(this.find('.progress-bar').css('width')), progress = Number(this.bar());
-				if(bar<progress){										console.log("progress-bar-width - "+bar+" - calculated progress - "+progress);
-					this.find('.progress-bar').css({width:progress+'%'});
+				var bar = $("#bar").find('.progress-bar'), progress = Number(this.bar());
+				var w = bar[0].style.width;
+				var barW = (w.search('px') > -1) ? w.replace('px','') : w.replace('%','');
+
+															console.log("progress-bar-width - "+barW+" - calculated progress - "+progress);
+				if(_.isUndefined(undo)){
+					if(barW<progress){
+						bar.css({width:progress+'%'});
+					}
+				} else {
+					if(undo){
+						bar.css({width:progress+'%'});
+					}
 				}
 				return this;
 			}
@@ -90,7 +102,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 		},
 		_check: function(hide){
 			if(this.is($.wiz.h)){
-				if(_.isUndefined(hide) || hide === false){
+				if(_.isUndefined(hide) || !_.isBoolean(hide)){
 					$("#wizardTabs > li.active > a > i").removeClass("hide");
 				} else if(hide){
 					$("#wizardTabs > li.active > a > i").addClass("hide");
@@ -100,31 +112,38 @@ function onBeforeNext(e){ e.preventDefault(); }
 		},
 		_finish: function(){
 			if(this.is($.wiz.h)){
-				this._check()._bar()._enableNext().find(".button-next").qpop("Step "+(this.next())+" Complete",true,"left","manual");
+				this._check()._bar()._enableNext().find(".button-next").qpop("Step "+this.active()+" Complete",true,"left","manual");
 				return this;
 			}
 		},
 		_undo:  function(){
 			if(this.is($.wiz.h)){
-				this.check(true).bar()._disableNext().find($.btn._next).popover('destroy');
-				return this;
+				if(this.isfinished()){
+					this._check(true)._bar(true)._disableNext().find(".button-next").popover('destroy');
+					return this;
+				}
 			}
 		},
 		isfinished: function(){
-			if(this.is($.wiz.h))
-				return ($("#wizardTabs li").eq(this.active()).find('i').hasClass("hide"))?false:true;
+			if(this.is($.wiz.h)){
+				return ($("#wizardTabs > li.active").find('i').hasClass("hide"))?false:true;
+			}
 		},
 		disable: function(state){
 			return this.each(function(){
 				var $this = $(this);
-				if($this.is('input, button')) $this.disabled = state;
-				else $this.toggleClass('disabled', state);
+				if($this.is('input, button')){
+					$this.disabled = state;							   console.log("disabled input");
+				} else {
+					$this.toggleClass('disabled', state);              console.log("disabled non input");
+				}
 			});
 		},
 		_disableNext: function(){
 			if(this.is($.wiz.h)){
 				$("#wizardTabs li").eq(this.next_()).disable(true);
-				this.find($.btn._next).disable(true).data('next-enabled',false);
+				this.find(".button-next").disable(true);
+				this.data('next-enabled',false);
 				return this;
 			}
 		},
@@ -132,38 +151,16 @@ function onBeforeNext(e){ e.preventDefault(); }
 			if(this.is($.wiz.h)){
 				var next = Number(this.next_());
 				next = (next > 0)?next-1:
-				$("#wizardTabs li").eq(next-1).removeClass('disabled');
-				this.find($.btn._next).disable(false).data('next-enabled',true);
+				$("#wizardTabs li").eq(next).removeClass('disabled');
+				this.find(".button-next").disable(false).data('next-enabled',true);
 				return this;
 			}
 		},
 		backenabled: function(){
-			if(this.is($.wiz.h)){
-				var disabled = $.wiz.h.find("button:disabled");
-				if(disabled.length>0){
-					disabled.each(function(){
-						if($(this).is('.button-previous')){					console.log("backenabled - false");
-							return false;
-						} else {											console.log("backenabled - true");
-							return true;
-						}
-					});
-				}
-			}
+			if(this.is($.wiz.h)) return $(".button-next").is(":disabled");
 		},
 		nextenabled: function(){
-			if(this.is($.wiz.h)){
-				var disabled = $.wiz.h.find("button:disabled");
-				if(disabled.length>0){
-					disabled.each(function(){
-						if($(this).is('.button-next')){ 					console.log("nextenabled - false");
-							return false;
-						} else {											console.log("nextenabled - true");
-							return true;
-						}
-					});
-				}
-			}
+			if(this.is($.wiz.h)) return $(".button-next").is(":disabled");
 		},
 		uploaderror: function(msg){
 			$("#output").html(msg);
@@ -173,7 +170,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 	});
 	$(λ).load(function(){
 		$.wiz.v.accwizard({
-			'onInit': function(){                                         console.log("acc-wiz - onInit");
+			'onInit': function(){                                               console.log("acc-wiz - onInit");
 				var tto = {placement:"bottom"};
 				$("#form-info").validate({
 					rules: {
@@ -195,7 +192,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 					}
 				});
 			},
-			'beforeNext': function(parent,panel){                         console.log("acc-wiz - beforeNext");
+			'beforeNext': function(parent,panel){                               console.log("acc-wiz - beforeNext");
 				switch(panel.id){
 					case "items": break;
 					case "info":
@@ -228,16 +225,22 @@ function onBeforeNext(e){ e.preventDefault(); }
 		'nextSelector': $.btn._next,
 		'previousSelector': $.btn._prev,
 		'onInit': function(){ 												  console.log("modal-wiz - onInit");
-			$.wiz.h.active();
+			$.wiz.h.active(true);
+			$.wiz.h._disableNext();                                           console.log("modal-wiz - next disabled");
 			$(document).keydown(function(e){								  console.log("modal-wiz - setup arrow keys");
-				switch(e.which){
-					case 37:if($.wiz.h.backenabled()){ $.btn.prev.click(); }  console.log("modal-wiz - left key");  break;
-					case 39:if($.wiz.h.nextenabled()){ $.btn.next.click(); }  console.log("modal-wiz - right key"); break;
+				if(e.which == 37){
+					if($.wiz.h.backenabled()){
+						$.btn.prev.click();   								  console.log("modal-wiz - left key");
+					}
+				if(e.which == 38)
+					if($.wiz.h.nextenabled()){
+						$.btn.next.click();    								  console.log("modal-wiz - right key");
+					}
 				}
 			});
 // #tab1=========================================================================================================================
 			$.tab1 = $("#tab1"), $.productSelect = $("#productSelect"), $.other = $("#otherInput"),
-			$.img = $("#tab5 img.product"), $.opt = $("#productSelect > option:selected");
+			$.img = $("#tab5 img.product"), $.opt = $.productSelect.find("option:selected");
 
 			$.productSelect.imagepicker({
 				initialized:function(){  									console.log("productSelect - initialize");
@@ -246,30 +249,31 @@ function onBeforeNext(e){ e.preventDefault(); }
 				clicked:function(options){  								console.log("productSelect - clicked");
 				},
 				selected:function(options){ 								console.log("productSelect - selected");
-/*  */				if($.opt.val()==9){
-						$.other.show().find("input").focus().keydown(function(e){   console.log("productSelect - selected 'other'");
-							if(e.which==13){
+
+/*  */				if(options.value() == 9){								console.log("productSelect - selected 'other'");
+						$.other.show().find("input").focus().keydown(function(e){
+							if(e.which == 13){
 								$.tab1.data('product',$(this).val());
 								$.img.attr("src",$.opt.data("img-src"));
 								$.other.hide();
 								$.wiz.h._finish();
 							}
 						});
-					} else if($.opt.val()>0 && $.opt.val()!=9){              console.log("productSelect - product selected -NOT 'other'");
+					} else if(options.value()>0 && options.value() != 9){              console.log("productSelect - product selected -NOT 'other'");
 						$.other.hide();
+						$.wiz.h._finish();
+
 					}
 				},
-				changed:function(oldVal,newVal){      										console.log("productSelect - changed from "+oldVal+" to "+newVal);
-					if(newVal>0 && newVal!==9){
+				changed:function(oldVal,newVal){      										console.log("productSelect - changed from "+Number(oldVal)+" to "+Number(newVal));
+					newVal = Number(newVal);
+					if(newVal>0 && newVal !== 9){
 						$.tab1.data("product",$.opt.text());
 						$.img.attr("src",$.opt.data('img-src'));
-						$.wiz.h._finish();
 						return;
-					}
-					if(oldVal>0 && newVal<1){
+					} else if(newVal<1){
 						$.tab1.data('product', null);
-						$.wiz.h._undo();
-						return;
+						$.wiz.h._undo();												console.log('undo');
 					}
 				}
 			});
@@ -303,6 +307,9 @@ function onBeforeNext(e){ e.preventDefault(); }
 				$("#tab2").data('art','Custom Design Requested');
 				$.wiz.h._finish();
 			});
+			$(".hideAlert").click(function(){
+				$(this).parent('.alert').addClass('hide');
+			});
 			$("#uploadArtwork").ajaxForm({ target: "#output", resetForm: false, clearForm: false,
 			    beforeSend: function(arr,$form,options) { 			console.log("uploadForm - beforeSend");
 			        if(λ.File && λ.FileReader && λ.FileList && λ.Blob) {
@@ -311,13 +318,22 @@ function onBeforeNext(e){ e.preventDefault(); }
 							for (var i in files) {
 								var size = files[i].size, type = files[i].type;
 								switch(type){
-									case 'image/svg+xml': case 'image/png': case 'image/gif': case 'image/jpeg': case 'image/pjpeg': case 'application/pdf':
+									case 'image/svg+xml': case 'image/png': case 'image/gif': case 'image/jpg': case 'image/jpeg': case 'image/pjpeg': case 'application/pdf':
 									case 'application/x-zip-compressed':  break;
-									default: $("body").uploaderror("File(s) must be in svg,png,gif,jpeg,pdf or zip format"); break;
+									default:
+										$("body").uploaderror("File(s) must be in svg,png,gif,jpeg,pdf or zip format");
+										return false;
+									break;
 								}
-								if(size>5242880) $("body").uploaderror("File(s) should be less than 5 MB");
+								if(size>5242880){
+									$("body").uploaderror("File(s) should be less than 5 MB");
+									return false;
+								}
 							}
-					} else $("body").uploaderror("Looks like it's time to upgrade your browser.");
+					} else {
+						$("body").uploaderror("Looks like it's time to upgrade your browser.");
+						return false;
+					}
 				},
 				success: function() { 								console.log("uploadForm - success");
 					$("#tab2").data('art',$('.zip').html());
@@ -408,8 +424,6 @@ function onBeforeNext(e){ e.preventDefault(); }
 		},
 		'onNext': function(tab,navigation,index){ 					console.log("modal-wiz - onNext");
 			$.wiz.h.find($.btn._next).popover('destroy');
-			if(!$.wiz.h.isfinished($.wiz.h.active()))
-				$.wiz.h._disableNext();
 		}
 	});
 
