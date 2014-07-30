@@ -1,9 +1,10 @@
 function onBeforeNext(e){ e.preventDefault(); }
 (function($,_,λ){
+	//console.log = function(){};//uncomment this line to turn of console messages
 	$.wiz =  {"h":$("#rootwizard"), "v":$('.acc-wizard')};
 	$.btn =  {"prev":$(".button-previous"), "_prev":".button-previous", "next":$(".btn._next"), "_next":".button-next" };
 	$.form = {"items":$("#form-items"),"garments":$("#garmentForm"),"upload":$("#uploadArtwork"),"info":$("#form-info"),"address":$("#form-address") };
-	$.ctrl = {"product":$("#productSelct") };
+	$.ctrl = {"product":$("#productSelect") };
 	$(document).ajaxStart(function(){});
 	_.templateSettings = { variable:'data',interpolate: /\{\{=(.+?)\}\}/g, evaluate:/\{\{(.+?)\}\}/g, escape:/\{\{-(.+?)\}\}/g };
 	var funcs = _.extend(_.str.exports(),{
@@ -201,23 +202,23 @@ function onBeforeNext(e){ e.preventDefault(); }
 				}
 			},
 			'onNext': function(parent,panel){                              		console.log("acc-wiz - onNext");
-
+				//
 			},
 			'beforeBack': function(parent,panel){                          		console.log("acc-wiz - beforeBack");
-
+				//
 			},
 			'onBack': function(parent,panel){                              		console.log("acc-wiz - onBack");
-
+				//
 			},
 			'onLast': function(parent,panel){                                 	console.log("acc-wiz - onLast");
-
+				//
 			}
 		});
 	});
 	$.wiz.h.bootstrapWizard({
 		'nextSelector': $.btn._next,
 		'previousSelector': $.btn._prev,
-		'onInit': function(){ 												  	console.log("modal-wiz - onInit");
+		'onInit': function(){ 	    										  	console.log("modal-wiz - onInit");
 			$.wiz.h.active(true);
 			$.wiz.h._disableNext();                                           	console.log("modal-wiz - next disabled");
 			$(document).keydown(function(e){								  	console.log("modal-wiz - setup arrow keys");
@@ -241,6 +242,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 					$.other.hide();
 				},
 				clicked:function(options){  									console.log("productSelect - clicked");
+					//
 				},
 				selected:function(options){ 									console.log("productSelect - selected");
 					if(options.value() == 9){									console.log("productSelect - selected 'other'");
@@ -331,13 +333,19 @@ function onBeforeNext(e){ e.preventDefault(); }
 				},
 				success: function() { 											console.log("uploadForm - success");
 					$("#tab2").data('art',$('.zip').html());
+					//get images from preview pane for review tab, then reset the form
+					var images = [];
+					$(".file-preview .file-preview-frame img").each(function(){
+						images.push($(this).attr('src'));
+					});
+					$("#Fileinput").fileinput('clear');
 					$.wiz.h._finish();
 				}
 			});
 // #tab3====================================================================================================================================
 
 			$("#location").on("focus", function(){
-				$("#addLocation").on("click",function(){ 				console.log("addLocation - submitted location");
+				$("#addLocation").on("click",function(){ 						console.log("addLocation - submitted location");
 					if($("#location").val().length>0){
 						$("#tab3").data('location', $("#location").val());
 						$.wiz.h._finish();
@@ -350,9 +358,15 @@ function onBeforeNext(e){ e.preventDefault(); }
 				});
 			});
 // #tab4====================================================================================================================================
-
-			$(".selectpicker").selectpicker();
 			//add gildan colors
+			var _co = _.template($("script.co").html()), colors = { "colors": { "white":7229,"black":6418 } };
+			$(".selectpicker").selectpicker({width:"150px",size:8}).append(_co(colors)).selectpicker("refresh");
+			$(".icon-ok").hide();
+
+			$(".selectpicker").change(function(){
+																				console.log();
+			});
+
 			$("#garmentForm").find("input[type='text']").keypress(function(e){
 				var k=e.which;
 				if(k!=0 && k!=8 && k!=13 && (k<48 || k>57)){
@@ -370,10 +384,12 @@ function onBeforeNext(e){ e.preventDefault(); }
 					"color":  $('select.selectpicker option:selected').text(),
 					"swatch": $('select.selectpicker option:selected').data('content'),
 					"total":  $("#garmentForm").data('total'),
-					"sizes":  _.map(Array(6), function(){ return 0; })
+					"sizes":  []
 				};
-				$("#garmentForm").find("input[type=text]").each(function(i){ garmentData.sizes[i] = $(this).val(); });
-				if($("#garmentList > li:first").is('.empty')) $("#listOfItems").empty();
+				$("#garmentForm").find("input[type=text]").each(function(i){
+					garmentData.sizes.push($(this).val());
+				});
+				if($("#garmentList > li:first").is('.empty')) $("#garmentList").empty();
 				if($("#garmentList > li #"+garmentData.color).length>0){
 					$("#"+garmentData.color).replaceWith(_li(garmentData));
 					$("#colorsAndSizes > tr."+garmentData.color).replaceWith(_tr(garmentData));
