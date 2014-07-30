@@ -234,8 +234,8 @@ function onBeforeNext(e){ e.preventDefault(); }
 				}
 			});
 // #tab1=========================================================================================================================
-			$.tab1 = $("#tab1"), $.productSelect = $("#productSelect"), $.other = $("#otherInput"),
-			$.img = $("#tab5 img.product"), $.opt = $.productSelect.find("option:selected");
+			$.tab1 = $("#tab1"), $.productSelect = $("#productSelect"), $.other = $("#otherInput"), $.oin = $("#other-input"),
+			$.img = $("#tab5 img.product");
 
 			$.productSelect.imagepicker({
 				initialized:function(){  										console.log("productSelect - initialize");
@@ -245,10 +245,11 @@ function onBeforeNext(e){ e.preventDefault(); }
 					//
 				},
 				selected:function(options){ 									console.log("productSelect - selected");
+					$.opt = $.productSelect.find("option:selected");
 					if(options.value() == 9){									console.log("productSelect - selected 'other'");
 						$.other.show().find("input").focus().keydown(function(e){
 							if(e.which == 13){
-								$.tab1.data('product',$(this).val());
+								$.tab1.data('product',$.oin.val());			    console.log("product - "+$.tab1.data('product'));
 								$.img.attr("src",$.opt.data("img-src"));
 								$.other.hide();
 								$.wiz.h._finish();
@@ -256,6 +257,8 @@ function onBeforeNext(e){ e.preventDefault(); }
 						});
 					} else if(options.value()>0 && options.value() != 9){       console.log("productSelect - product selected -NOT 'other'");
 						$.other.hide();
+						$.tab1.data('product',$.opt.text());					console.log("product - "+$.tab1.data('product'));
+						$.img.attr("src",$.opt.data("img-src"));
 						$.wiz.h._finish();
 
 					}
@@ -263,6 +266,7 @@ function onBeforeNext(e){ e.preventDefault(); }
 				changed:function(oldVal,newVal){      							console.log("productSelect - changed from "+Number(oldVal)+" to "+Number(newVal));
 					newVal = Number(newVal);
 					if(newVal>0 && newVal !== 9){
+						$.opt = $.productSelect.find("option:selected");
 						$.other.hide();
 						$.tab1.data("product",$.opt.text());
 						$.img.attr("src",$.opt.data('img-src'));
@@ -281,9 +285,9 @@ function onBeforeNext(e){ e.preventDefault(); }
 			$('#hasArt').on('change', function(){ 					            console.log("hasArt - changed"+$(this).val());
 				var bgColor = '#949494';
 				switch($(this).val()){
-				    case 'yes':  bgColor = '#1085c2'; $("#pr").show(); $("#noArtwork,#noState,#hasArtwork").hide(); break;
-			        case 'null': bgColor = '#949494'; $("#noState").show(); $("#noArtwork,#pr,#hasArtwork").hide(); break;
-					case 'no':   bgColor = '#eac120'; $("#noArtwork").show(); $("#pr,#noState,#hasArtwork").hide(); break;
+				    case 'yes':  var bgColor = '#1085c2'; $("#pr").show(); $("#noArtwork,#noState,#hasArtwork").hide(); break;
+			        case 'null': var bgColor = '#949494'; $("#noState").show(); $("#noArtwork,#pr,#hasArtwork").hide(); break;
+					case 'no':   var bgColor = '#eac120'; $("#noArtwork").show(); $("#pr,#noState,#hasArtwork").hide(); break;
 			    }
 				$('#hasArt').find('.switchy-bar').animate({ backgroundColor: bgColor });
 			});
@@ -293,9 +297,9 @@ function onBeforeNext(e){ e.preventDefault(); }
 			$('#printReady').on('change', function(){ 				            console.log("printReady - changed - "+$(this).val());
 				var bgColor = '#949494';
 				switch($(this).val()){
-					case 'yes':  bgColor = '#1085c2'; $("#hasArtwork").show(); $("#tab2").data('vector',true); break;
-					case 'null': bgColor = '#949494'; $("#hasArtwork").hide(); $("#tab2").data('vector',null); break;
-					case 'no':   bgColor = '#eac120'; $("#hasArtwork").show(); $("#tab2").data('vector',false);break;
+					case 'yes':  var bgColor = '#1085c2'; $("#hasArtwork").show(); $("#tab2").data('vector',true); break;
+					case 'null': var bgColor = '#949494'; $("#hasArtwork").hide(); $("#tab2").data('vector',null); break;
+					case 'no':   var bgColor = '#eac120'; $("#hasArtwork").show(); $("#tab2").data('vector',false);break;
 				}
 				$('#printReady').find('.switchy-bar').animate({ backgroundColor: bgColor });
 			});
@@ -334,10 +338,14 @@ function onBeforeNext(e){ e.preventDefault(); }
 				success: function() { 											console.log("uploadForm - success");
 					$("#tab2").data('art',$('.zip').html());
 					//get images from preview pane for review tab, then reset the form
-					var images = [];
-					$(".file-preview .file-preview-frame img").each(function(){
-						images.push($(this).attr('src'));
-					});
+					var images = $(".file-preview .file-preview-frame img");
+					if(images.length>0){
+						images.each(function(){
+							$("#spacegallery").append($("<img/>").attr("src",$(this).attr('src')));
+						});
+						$("#spacegallery").spacegallery();
+					}
+					$("#spacegallery").removeClass("hide");
 					$("#Fileinput").fileinput('clear');
 					$.wiz.h._finish();
 				}
@@ -379,18 +387,19 @@ function onBeforeNext(e){ e.preventDefault(); }
 				}
 			});
 			$("#addGarment").click(function(){									console.log("addGarment - submitted colors and sizes");
-				var _li = _.template($("script.li").html()), _tr = _.template($("script.tr").html()),
-				garmentData = {
-					"color":  $('select.selectpicker option:selected').text(),
-					"swatch": $('select.selectpicker option:selected').data('content'),
-					"total":  $("#garmentForm").data('total'),
-					"sizes":  []
-				};
+				var _li = _.template($("script.li").html()), _tr = _.template($("script.tr").html()), sizes = [];
 				$("#garmentForm").find("input[type=text]").each(function(i){
-					garmentData.sizes.push($(this).val());
+					sizes.push($(this).val());
 				});
+				var garmentData = {
+					"color":  $('select.selectpicker option:selected').text(),
+					"swatch": $('select.selectpicker option:selected').data('content').split(" ")[0],
+					"total":  $("#garmentForm").data('total'),
+					"sizes":  sizes
+				};
+
 				if($("#garmentList > li:first").is('.empty')) $("#garmentList").empty();
-				if($("#garmentList > li #"+garmentData.color).length>0){
+				if(!$("#garmentList > li #"+garmentData.color)){
 					$("#"+garmentData.color).replaceWith(_li(garmentData));
 					$("#colorsAndSizes > tr."+garmentData.color).replaceWith(_tr(garmentData));
 				} else {
